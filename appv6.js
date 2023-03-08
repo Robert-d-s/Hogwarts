@@ -37,6 +37,7 @@ Promise.all([
   .catch((error) => console.error(error));
 
 function processStudentData(studentsData, bloodData) {
+  console.log(studentsData);
   const students = [];
 
   // Loop through each student object in the JSON data
@@ -67,6 +68,7 @@ function processStudentData(studentsData, bloodData) {
 
     // Capitalize the house name
     const house = capitalizeName(studentData.house.trim());
+    // console.log(house);
 
     // Extract gender from name
     const gender = capitalizeName(studentData.gender);
@@ -96,15 +98,27 @@ function processStudentData(studentsData, bloodData) {
     // Add the new Student object to the array of students
     students.push(student);
   });
+  //   console.log(students);
+
   return students;
 }
 
 function getStudentsByHouse(students, house) {
+  //   console.log("students:", students);
+  //   console.log("house:", house);
   return students.filter((student) => student.house === house);
 }
 
+// function openModal(modal) {
+//   modal.style.display = "block";
+// }
+
+// function closeModal(modal) {
+//   modal.style.display = "none";
+// }
+
 function displayStudents(students) {
-  console.table(students);
+  //   console.table(students);
   // Clear existing table
   const studentList = document.getElementById("student-list");
   studentList.innerHTML = "";
@@ -173,28 +187,88 @@ function displayStudents(students) {
   studentList.appendChild(table);
 }
 
-function generatePrefectButton(student, students) {
+// function generatePrefectButton(student, students) {
+//   const prefectButton = document.createElement("button");
+//   prefectButton.textContent = student.isPrefect ? "Is Prefect" : "Make Prefect";
+//   prefectButton.addEventListener("click", () => {
+//     // Check if there are already two prefects from this house
+//     const housePrefects = students.filter(
+//       (s) => s.house === student.house && s.isPrefect
+//     );
+//     if (housePrefects.length === 2) {
+//       alert(`There are already two prefects from ${student.house}`);
+//       return;
+//     }
+
+//     if (prefectButton.textContent === "Make Prefect") {
+//       prefectButton.textContent = "Is Prefect";
+//       student.isPrefect = true;
+//     } else {
+//       prefectButton.textContent = "Make Prefect";
+//       student.isPrefect = false;
+//     }
+
+//     displayStudents(students);
+//   });
+
+//   return prefectButton;
+// }
+
+function generatePrefectButton(students, student) {
+  //   console.log(student.house);
+  //   console.log(student);
+  const eligibleStudents = getStudentsByHouse(students, student.house);
+  console.log(eligibleStudents);
+
+  const numPrefects = eligibleStudents.filter(
+    (student) => student.isPrefect
+  ).length;
+  const maxPrefects = Math.floor(eligibleStudents.length / 2);
+
   const prefectButton = document.createElement("button");
   prefectButton.textContent = student.isPrefect ? "Is Prefect" : "Make Prefect";
+
   prefectButton.addEventListener("click", () => {
-    // Check if there are already two prefects from this house
-    const housePrefects = students.filter(
-      (s) => s.house === student.house && s.isPrefect
+    const assignedPrefects = eligibleStudents.filter(
+      (student) => student.isPrefect
     );
-    if (housePrefects.length === 2) {
-      alert(`There are already two prefects from ${student.house}`);
-      return;
-    }
+    const numAssignedPrefects = assignedPrefects.length;
 
-    if (prefectButton.textContent === "Make Prefect") {
-      prefectButton.textContent = "Is Prefect";
-      student.isPrefect = true;
+    if (numAssignedPrefects >= maxPrefects) {
+      const prefectModal = document.getElementById("prefect-modal");
+      const modalContent = prefectModal.querySelector(".modal-content");
+      modalContent.innerHTML = "";
+
+      const title = document.createElement("h2");
+      title.textContent = "Remove a Prefect";
+      modalContent.appendChild(title);
+
+      const housePrefects = document.createElement("ul");
+      assignedPrefects.forEach((prefect) => {
+        const prefectItem = document.createElement("li");
+        const prefectName = document.createElement("span");
+        prefectName.textContent = `${prefect.firstName} ${prefect.lastName}`;
+        prefectItem.appendChild(prefectName);
+
+        const removeButton = document.createElement("button");
+        removeButton.textContent = "Remove";
+        removeButton.addEventListener("click", () => {
+          prefect.isPrefect = false;
+          student.isPrefect = true;
+          displayStudents(students);
+          closeModal(prefectModal);
+        });
+
+        prefectItem.appendChild(removeButton);
+        housePrefects.appendChild(prefectItem);
+      });
+
+      modalContent.appendChild(housePrefects);
+      openModal(prefectModal);
     } else {
-      prefectButton.textContent = "Make Prefect";
-      student.isPrefect = false;
+      student.isPrefect = true;
+      displayStudents(students);
     }
-
-    displayStudents(students);
   });
 
   return prefectButton;
